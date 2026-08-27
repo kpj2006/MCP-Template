@@ -1,10 +1,10 @@
-# Contributing to TODO: Project Name
+# Contributing to AOSSIE MCP Template
 
 ⭐ First off, thank you for considering contributing to this project! ⭐
 
 We welcome contributions from everyone. By participating in this project, you agree to abide by our Code of Conduct.
 
-## � IMPORTANT: Discord Communication is Mandatory
+## 📢 IMPORTANT: Discord Communication is Mandatory
 
 **All project communication MUST happen on Discord. We do not pay attention to GitHub notifications.**
 
@@ -15,16 +15,21 @@ We welcome contributions from everyone. By participating in this project, you ag
 
 **PRs without Discord updates will not be reviewed or may face delays.**
 
-## �📋 Table of Contents
+## 📋 Table of Contents
 
-- [How Can I Contribute?](#how-can-i-contribute)
-- [Coding with AI](#coding-with-ai)
-- [Getting Started](#getting-started)
-- [Development Workflow](#development-workflow)
-- [Pull Request Guidelines](#pull-request-guidelines)
-- [Code Style Guidelines](#code-style-guidelines)
-- [Debugging Pre-commit Hooks](#debugging-pre-commit-hooks)
-- [Community Guidelines](#community-guidelines)
+- [How Can I Contribute?](#-how-can-i-contribute)
+- [Content vs. Code](#-content-vs-code)
+- [Coding with AI](#-coding-with-ai)
+- [Getting Started](#-getting-started)
+- [Development Workflow](#-development-workflow)
+- [The One Rule That Will Bite You](#-the-one-rule-that-will-bite-you)
+- [Adding a Tool](#-adding-a-tool)
+- [Pull Request Guidelines](#-pull-request-guidelines)
+- [Code Style Guidelines](#-code-style-guidelines)
+- [Releasing](#-releasing)
+- [Debugging Pre-commit Hooks](#-debugging-pre-commit-hooks)
+- [Community Guidelines](#-community-guidelines)
+- [Issue Assignment](#-issue-assignment)
 
 ## 🤝 How Can I Contribute?
 
@@ -36,7 +41,7 @@ Before creating bug reports, please check existing issues to avoid duplicates. W
 - Steps to reproduce the issue
 - Expected behavior vs actual behavior
 - Screenshots/Video (if applicable)
-- Environment details (OS, browser, versions, etc.)
+- Environment details (OS, Node.js version, MCP client, etc.)
 
 ### Suggesting Features
 
@@ -46,12 +51,24 @@ Feature suggestions are welcome! Please:
 - Provide a clear description of the feature
 - Explain why this feature would be useful
 - Include examples of how it would work
+
 ### Contributing Code
 
 1. **Submit an Issue First**: For features, bugs, or enhancements, create an issue first
-2. **Get Assigned**: Wait to be assigned before starting work(preferable)
+2. **Get Assigned**: Wait to be assigned before starting work (preferable)
 3. **Submit Your PR**: Once assigned, create a PR addressing the issue
 4. **Unrelated PRs**: Pull requests unrelated to issues may be closed or take longer to review
+
+## 🧩 Content vs. Code
+
+Two kinds of change land here, and they have different bars.
+
+**Content** — anything under `catalog/sources/**`. Add a Markdown file, open a
+PR. `npm run catalog` in CI validates it. No release needed; merging to `main`
+deploys it to GitHub Pages.
+
+**Code** — anything under `src/` or `scripts/`. The rest of this guide is
+mostly about this path.
 
 ## 🤖 Coding with AI
 
@@ -68,7 +85,8 @@ What we expect:
 
 ### Prerequisites
 
-TODO: List prerequisites specific to your project
+- Node.js 20.10 or newer
+- npm
 
 ### Setup
 
@@ -79,32 +97,31 @@ TODO: List prerequisites specific to your project
 
 2. **Clone Your Fork**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/TODO.git
-   cd TODO
+   git clone https://github.com/YOUR_USERNAME/MCP-Template.git
+   cd MCP-Template
    ```
 
 3. **Add Upstream Remote**
    ```bash
-   git remote add upstream https://github.com/AOSSIE-Org/TODO.git
+   git remote add upstream https://github.com/AOSSIE-Org/MCP-Template.git
    ```
 
 4. **Install Dependencies**
    ```bash
    npm install
-   # or yarn install
-   # or pnpm install
    ```
 
-5. **Run the Project**
+5. **Verify and Try It**
    ```bash
-   npm run dev
+   npm run verify        # stdout guard, catalog validation, typecheck, e2e tests
+   npm run inspect        # drive it by hand in the MCP Inspector
    ```
 
 ## 🔄 Development Workflow
 
 ### 1. Create a Feature Branch
 
-Always work on a new branch, never on `main` or `dev`:
+Always work on a new branch, never on `main`:
 
 ```bash
 git checkout -b feature/your-feature-name
@@ -116,18 +133,24 @@ git checkout -b fix/your-bug-fix
 
 - Write clean, readable code
 - Follow the project's code style
-- Add comments where necessary
+- Add comments where necessary (explain *why*, not *what*)
 - Update documentation if needed
 
 ### 3. Test Your Changes
 
-TODO: Add project-specific testing instructions
+`verify` is what CI runs: the stdout guard, catalog validation, typecheck, and
+the end-to-end test that spawns the built server and drives it with a real MCP
+client. Run it before pushing:
 
 ```bash
-npm test
-# or
-npm run lint
+npm run verify
 ```
+
+`test/search.test.mjs` covers ranking. `test/protocol.test.mjs` runs the built
+server as a subprocess and drives it with the SDK's own client — that is where
+a new tool belongs, because it catches registration errors, schema rejections
+and framing bugs that unit tests cannot see. Tests import from `dist/`, so
+`npm test` builds first.
 
 ### 4. Commit Your Changes
 
@@ -154,7 +177,6 @@ git commit -m "fix: resolve navigation bug"
 ```bash
 git fetch upstream
 git rebase upstream/main
-# or upstream/dev depending on the project
 ```
 
 ### 6. Push Your Changes
@@ -163,12 +185,46 @@ git rebase upstream/main
 git push origin feature/your-feature-name
 ```
 
+## ⚠️ The One Rule That Will Bite You
+
+**Nothing under `src/` may write to stdout.** On stdio transport, stdout is
+the JSON-RPC framing; a single `console.log` corrupts a frame and the client
+reports an opaque disconnect with nothing pointing at the cause.
+
+Use `log` from `src/core/logger.ts`, which writes to stderr. `npm run
+check:stdout` fails the build on any violation, and it runs before every
+build — not just in CI.
+
+Watch for this in dependencies too. A library that prints a deprecation
+notice to stdout breaks the session the same way.
+
+## 🛠️ Adding a Tool
+
+Before writing code, check whether the catalog can express it. A new category
+or tag needs neither code nor a release.
+
+If a tool is genuinely needed: create `src/tools/<name>.ts` exporting
+`defineTool({...})` and add it to the array in `src/tools/index.ts`. That
+array is the single source of truth — listing and dispatch both derive from
+it.
+
+Guidelines that matter more than they look:
+
+- **Name it specifically.** `compare_forecasts` over `forecast_op`. The name
+  is the strongest signal a model has about when to call it.
+- **The description is prompt, not documentation.** Say what the tool returns
+  and when to prefer it over its siblings. Iterating on a description is
+  usually more effective than changing the code.
+- **Return the minimum useful shape.** Every field costs the caller context.
+- **Throw `ToolError` with a hint.** Turn a dead end into a next step.
+- **`describe()` every input field.** It is what the model reads to fill them.
+
 ## 📤 Pull Request Guidelines
 
 ### Before Submitting
 
 - [ ] Your code follows the project's style guidelines
-- [ ] You've tested your changes thoroughly
+- [ ] You've run `npm run verify` and it passes
 - [ ] You've updated relevant documentation
 - [ ] Your commits are clean and well-organized
 - [ ] You've rebased with the latest upstream changes
@@ -194,7 +250,6 @@ Brief description of what this PR does
 ## Related Issue
 Closes #issue_number
 
-
 ## Screenshots/Video (if applicable)
 Add screenshots here
 
@@ -210,7 +265,7 @@ Steps to test the changes
 
 ### After Submission
 
-- Post your PR in the project's Discord channel for visibility(**IMPORTANT**)
+- Post your PR in the project's Discord channel for visibility (**IMPORTANT**)
 - Respond to review comments promptly
 - Make requested changes in new commits
 - Be patient - maintainers will review when available
@@ -223,35 +278,47 @@ Steps to test the changes
 
 ## 📝 Code Style Guidelines
 
-TODO: Add project-specific code style guidelines
+The existing code is the spec: four-space indent, ESM with `.js` extensions
+on relative imports (required by `NodeNext`), named exports, `strict`
+TypeScript.
+
+Comments explain *why*, not *what*. If a comment restates the line below it,
+delete it. If a decision would look arbitrary to the next reader, write down
+what the alternative was and why it lost.
 
 ### General Guidelines
 
 - Use meaningful variable and function names
 - Keep functions small and focused
-- Add comments for complex logic
-- Remove console.logs before committing
+- Remove `console.log`s before committing — use `log` from `src/core/logger.ts` instead
 - Avoid code duplication
 - Avoid unnecessary complexity and minor over-optimization
 
-### JavaScript/TypeScript
-- Use ES6+ syntax
-- Prefer `const` over `let`, avoid `var`
-- Use arrow functions where appropriate
-- Follow ESLint rules
+### Dependencies
 
-### Python
-- Follow PEP 8 style guide
-- Use type hints where applicable
-- Write docstrings for functions/classes
+The runtime dependency list is two packages (`@modelcontextprotocol/sdk`,
+`zod`) and should stay that way. `scripts/` has none at all, deliberately —
+they run unattended in CI and only read local files. A PR adding a dependency
+should say what it replaces and why the hand-rolled version is not adequate.
+
+## 🚢 Releasing
+
+Maintainers only.
+
+```bash
+npm version <patch|minor|major>   # also syncs mcp.config.json into the commit
+git push --follow-tags
+```
+
+`publish.yml` verifies the tag matches both `package.json` and
+`mcp.config.json`, refreshes the bundled snapshot from the tagged catalog,
+runs `verify`, and publishes to npm with provenance.
 
 ## 🔧 Debugging Pre-commit Hooks
 
 Pre-commit hooks help maintain code quality by running automated checks before each commit. This section helps you troubleshoot common issues.
 
 ### Initial Setup
-
-If pre-commit is configured in this project, install it first:
 
 ```bash
 pip install pre-commit
@@ -333,7 +400,7 @@ Potential secrets about to be added to git repo:
 ```bash
 # Option 1: Remove the secret and use environment variables
 # Replace hardcoded secrets with:
-# API_KEY = os.getenv('API_KEY')
+# API_KEY = process.env.API_KEY
 
 # Option 2: If it's a false positive, update baseline:
 # detect-secrets scan > .secrets.baseline
@@ -523,19 +590,14 @@ If you encounter issues not covered here:
 
 - Check existing documentation first
 - Search closed issues for similar problems
-- Ask in Discord 
+- Ask in Discord
 - Tag maintainers if your PR is unattended for 1-2 weeks on discord
 
 ## 🎯 Issue Assignment
 
 - One contributor per issue (unless specified otherwise)
-<!--
-- Wait for assignment before starting work
-- Issues will be reassigned if inactive for extended periods
--->
 - If there are no active PRs for an issue for 2+ days, mention your intent under the issue and begin
 - Avoid working on issues which are assigned to someone, even if they are inactive
-- Check for existing PRs before starting to avoid duplication, as there might PRs that didn't mention the related issue
+- Check for existing PRs before starting to avoid duplication, as there might be PRs that didn't mention the related issue
 
-
-Thank you for contributing to TODO! Your efforts help make this project better for everyone. 🚀
+Thank you for contributing to AOSSIE MCP Template! Your efforts help make this project better for everyone. 🚀

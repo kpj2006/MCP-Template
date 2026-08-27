@@ -4,7 +4,6 @@
 <!-- Organization Logo -->
 <div align="center" style="display: flex; align-items: center; justify-content: center; gap: 16px;">
   <img alt="AOSSIE" src="public/aossie-logo.svg" width="175">
-  <img src="public/todo-project-logo.svg" width="175" />
 </div>
 
 &nbsp;
@@ -12,9 +11,7 @@
 <!-- Organization Name -->
 <div align="center">
 
-[![Static Badge](https://img.shields.io/badge/aossie.org/TODO-228B22?style=for-the-badge&labelColor=FFC517)](https://TODO.aossie.org/)
-
-<!-- Correct deployed url to be added -->
+[![Static Badge](https://img.shields.io/badge/aossie.org-228B22?style=for-the-badge&labelColor=FFC517)](https://aossie.org/)
 
 </div>
 
@@ -41,220 +38,157 @@
   <img src="https://img.shields.io/youtube/channel/subscribers/UCKVVLbawY7Gej_3o2WKsoiA?style=flat&logo=youtube&logoColor=white%20&logoSize=auto&labelColor=FF0000&color=FF0000" alt="Youtube Badge"></a>
 </p>
 
-
 <p align="center">
-  <a href="https://scorecard.dev/viewer/?uri=github.com/AOSSIE-Org/{repo}">
-    <img src="https://api.scorecard.dev/projects/github.com/AOSSIE-Org/{repo}/badge" alt="OpenSSF Scorecard"/>
-  </a>
-  &nbsp;&nbsp;
-  <a href="./BestPracticesChecklist.md">
-    <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FAOSSIE-Org%2Frepo%2Fmain%2Fchecklist-status.json&query=%24.percent&suffix=%25&label=Best%20Practices&logo=openssf" alt="Best Practices"/>
-  </a>
-  &nbsp;&nbsp;
   <a href="https://github.com/gitleaks/gitleaks">
     <img src="https://img.shields.io/badge/protected%20by-gitleaks-blue" alt="Protected by Gitleaks"/>
   </a>
 </p>
 
----
-
 <div align="center">
-<h1>TODO: Project Name</h1>
+<h1>AOSSIE MCP Template</h1>
 </div>
 
-[TODO](https://TODO.stability.nexus/) is a ... TODO: Project Description.
+<p align="center">
+A template for giving any AOSSIE project an MCP server <b>with no server</b>.
+</p>
 
 ---
 
-## 🚀 Features
+## How it works
 
-TODO: List your main features here:
-
-- **Feature 1**: Description
-- **Feature 2**: Description
-- **Feature 3**: Description
-- **Feature 4**: Description
-
----
-
-## 💻 Tech Stack
-
-TODO: Update based on your project
-
-### Frontend
-- React / Next.js / Flutter / React Native
-- TypeScript
-- TailwindCSS
-
-### Backend
-- Flask / FastAPI / Node.js / Supabase
-- Database: PostgreSQL / SQLite / MongoDB
-
-### AI/ML (if applicable)
-- LangChain / LangGraph / LlamaIndex
-- Google Gemini / OpenAI / Anthropic Claude
-- Vector Database: Weaviate / Pinecone / Chroma
-- RAG / Prompt Engineering / Agent Frameworks
-
-### Blockchain (if applicable)
-- Solidity / solana / cardano / ergo Smart Contracts
-- Hardhat / Truffle / foundry
-- Web3.js / Ethers.js / Wagmi
-- OpenZeppelin / alchemy / Infura
-
----
-
-## ✅ Project Checklist
-
-TODO: Complete applicable items based on your project type
-
-- [ ] **The protocol** (if applicable):
-   - [ ] has been described and formally specified in a paper.
-   - [ ] has had its main properties mathematically proven.
-   - [ ] has been formally verified.
-- [ ] **The smart contracts** (if applicable):
-   - [ ] were thoroughly reviewed by at least two knights of The Stable Order.
-   - [ ] were deployed to: [Add deployment details]
-- [ ] **The mobile app** (if applicable):
-   - [ ] has an _About_ page containing the Stability Nexus's logo and pointing to the social media accounts of the Stability Nexus.
-   - [ ] is available for download as a release in this repo.
-   - [ ] is available in the relevant app stores.
-- [ ] **The AI/ML components** (if applicable):
-   - [ ] LLM/model selection and configuration are documented.
-   - [ ] Prompts and system instructions are version-controlled.
-   - [ ] Content safety and moderation mechanisms are implemented.
-   - [ ] API keys and rate limits are properly managed.
-
----
-
-## 🔗 Repository Links
-
-TODO: Update with your repository structure
-
-1. [Main Repository](https://github.com/AOSSIE-Org/TODO)
-2. [Frontend](https://github.com/AOSSIE-Org/TODO/tree/main/frontend) (if separate)
-3. [Backend](https://github.com/AOSSIE-Org/TODO/tree/main/backend) (if separate)
-
----
-
-## 🏗️ Architecture Diagram
-
-TODO: Add your system architecture diagram here
+The MCP server runs as a subprocess on the user's own machine over stdio,
+shipped as a public npm package. Its data is static JSON on GitHub Pages. Both
+are free forever, there is no uptime to own, no OAuth to implement, and no
+rate limit to budget for. This is how the official filesystem, git and memory
+MCP servers ship.
 
 ```
-[Architecture Diagram Placeholder]
+                        ┌─────────────────────────────┐
+   the code rail        │ npm  @aossie/<project>-mcp  │   changes rarely
+   ─────────────        └──────────────┬──────────────┘
+                                       │ npx spawns it
+                        ┌──────────────▼──────────────┐
+                        │  MCP client (Claude, IDE…)  │
+                        │  stdio · JSON-RPC · local   │
+                        └──────────────┬──────────────┘
+                                       │ HTTPS GET, cached
+   the data rail        ┌──────────────▼──────────────┐
+   ─────────────        │ <org>.github.io/<repo>/     │   changes constantly
+                        │        catalog.json         │
+                        └─────────────────────────────┘
 ```
 
-You can create architecture diagrams using:
-- [Draw.io](https://draw.io)
-- [Excalidraw](https://excalidraw.com)
-- [Lucidchart](https://lucidchart.com)
-- [Mermaid](https://mermaid.js.org) (for code-based diagrams)
+**Code and data ship on separate rails.** The npm package holds logic. The
+catalog holds content. Adding an entry is a Pages deploy, not an npm release —
+which is the property that makes this workable across a large number of repos.
 
-Example structure to include:
-- Frontend components
-- Backend services
-- Database architecture
-- External APIs/services
-- Data flow between components
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for why it is built this way.
 
----
+## Try it in two minutes
 
-## 🔄 User Flow
-
-TODO: Add user flow diagrams showing how users interact with your application
-
-```
-[User Flow Diagram Placeholder]
-```
-
-### Key User Journeys
-
-TODO: Document main user flows:
-
-1. **User Journey 1**: Description
-   - Step 1
-   - Step 2
-   - Step 3
-
-2. **User Journey 2**: Description
-   - Step 1
-   - Step 2
-   - Step 3
-
-3. **User Journey 3**: Description
-   - Step 1
-   - Step 2
-   - Step 3
-
----
-
-## �🍀 Getting Started
-
-### Prerequisites
-
-TODO: List what developers need installed
-
-- Node.js 18+ / Python 3.9+ / Flutter SDK
-- npm / yarn / pnpm
-- [Any specific tools or accounts needed]
-
-### Installation
-
-TODO: Provide detailed setup instructions
-
-#### 1. Clone the Repository
+Before onboarding it into your project, you can run the template as-is to see
+what it does:
 
 ```bash
-git clone https://github.com/AOSSIE-Org/TODO.git
-cd TODO
-```
-
-#### 2. Install Dependencies
-
-```bash
+git clone https://github.com/AOSSIE-Org/MCP-Template.git
+cd MCP-Template
 npm install
-# or
-yarn install
-# or
-pnpm install
+npm run verify        # stdout guard, catalog validation, typecheck, e2e tests
+npm run inspect        # drive it by hand in the MCP Inspector
 ```
 
-#### 3. Configure Environment Variables(.env.example)
+## Onboard your project
 
-Create a `.env` file in the root directory:
-
-```env
-# Add your environment variables here
-API_KEY=your_api_key
-DATABASE_URL=your_database_url
-```
-
-#### 4. Run the Development Server
+This is the part that matters. Run:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+npm run onboard
 ```
 
-#### 5. Open your Browser
+It asks for a project slug, repo, and what one catalog entry is called, then
+rewrites `package.json`, `mcp.config.json`, `catalog/catalog.meta.json` and
+this README in one pass — so from here on, the README is yours to rewrite
+around your own project's motive. Non-interactively:
 
-Navigate to [http://localhost:3000](http://localhost:3000) to see the application.
+```bash
+npm run onboard -- --project=solar-oracle --repo=AOSSIE-Org/SolarOracle \
+                   --noun=forecast --nouns=forecasts --clean --yes
+```
 
-For detailed setup instructions, please refer to our [Installation Guide](./docs/INSTALL_GUIDE.md) (if you have one).
+Then replace `catalog/sources/**` with your content — one Markdown file per
+entry — and run `npm run catalog -- --snapshot`.
 
----
+Full walkthrough: **[docs/ONBOARDING.md](docs/ONBOARDING.md)**.
 
-## 📱 App Screenshots
+## What the server exposes
 
-TODO: Add screenshots showcasing your application
+Four tools. Their names follow `naming.itemNoun` in `mcp.config.json`, so a
+docs project gets `search_pages` / `get_page` and a skills project gets
+`search_skills` / `get_skill`.
 
-|  |  |  |
-|---|---|---|
-| Screenshot 1 | Screenshot 2 | Screenshot 3 |
+| Tool               | Returns                                                            |
+| ------------------ | ------------------------------------------------------------------- |
+| `search_items`     | Ranked summaries — id, title, summary, category, tags. No bodies.   |
+| `get_item`         | One entry in full, by exact id, including its body.                 |
+| `list_categories`  | The category vocabulary with per-category counts.                   |
+| `catalog_info`     | Where the data came from, when, and whether it is stale.            |
+
+Plus MCP resources (`aossie://catalog`, `aossie://item/{id}`) when
+`resources.enabled` is true, for clients that render a resource picker.
+
+## Repo layout
+
+```
+mcp.config.json            ← the onboarding surface: identity, catalog URL, naming
+catalog/
+  catalog.meta.json        ← project identity + category vocabulary
+  catalog.schema.json      ← the published data contract
+  sources/**/*.md          ← YOUR CONTENT. one file = one entry
+  snapshot.json            ← generated offline fallback, bundled into npm
+src/
+  index.ts                 ← stdio transport wiring, and nothing else
+  server.ts                ← createServer(): registers everything, transport-agnostic
+  core/                    ← never edited when onboarding
+    config.ts              ·  compiled config + derived tool names
+    catalog-client.ts      ·  fetch, ETag, retry, TTL cache, snapshot fallback
+    search.ts              ·  dependency-free weighted ranking
+    schemas.ts logger.ts errors.ts types.ts
+  tools/
+    index.ts               ← ADD YOUR TOOLS HERE (one array, one source of truth)
+    registry.ts            ·  defineTool(): schema + error wrapping
+    search-items.ts get-item.ts list-categories.ts catalog-info.ts
+  resources/items.ts
+scripts/
+  generate-runtime.mjs     ← compiles mcp.config.json into the build
+  build-catalog.mjs        ← sources/**  →  catalog.json  (zero dependencies)
+  check-stdout.mjs         ← build gate: nothing in src/ may write to stdout
+  onboard.mjs               ← rewrites the template for one project
+  sync-version.mjs         ← keeps mcp.config.json's version equal to package.json's
+.github/workflows/
+  ci.yml                   ← verify on 20.10 + 22, then install-from-tarball
+  catalog.yml              ← push to main → GitHub Pages
+  publish.yml              ← tag v* → npm with provenance
+```
+
+## Configuration
+
+Everything lives in [`mcp.config.json`](mcp.config.json) — server identity,
+catalog URL, cache TTL, tool naming, response size limits. It is compiled into
+the build by `scripts/generate-runtime.mjs`, so run `npm run gen` (or any
+`npm run build`) after editing it. Field-by-field reference:
+[docs/ONBOARDING.md](docs/ONBOARDING.md#configuration-reference).
+
+For local development, four environment variables override the compiled
+values without a rebuild: `AOSSIE_MCP_CATALOG_URL`, `AOSSIE_MCP_LOG_LEVEL`,
+`AOSSIE_MCP_CACHE_TTL`, `AOSSIE_MCP_FETCH_TIMEOUT_MS`.
+
+## Docs
+
+- **[docs/ONBOARDING.md](docs/ONBOARDING.md)** — adapt this template, step by step
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — why it is built this way
+- **[docs/CLIENTS.md](docs/CLIENTS.md)** — client-by-client install snippets
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — working on the template itself
+- **[catalog/catalog.schema.json](catalog/catalog.schema.json)** — the data contract
 
 ---
 
@@ -281,8 +215,8 @@ See the [LICENSE](LICENSE) file for details.
 
 ## 💪 Thanks To All Contributors
 
-Thanks a lot for spending your time helping TODO grow. Keep rocking 🥂
+Thanks a lot for spending your time helping the AOSSIE MCP Template grow. Keep rocking 🥂
 
-[![Contributors](https://contrib.rocks/image?repo=AOSSIE-Org/TODO)](https://github.com/AOSSIE-Org/TODO/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=AOSSIE-Org/MCP-Template)](https://github.com/AOSSIE-Org/MCP-Template/graphs/contributors)
 
-© 2026 AOSSIE 
+© 2026 AOSSIE

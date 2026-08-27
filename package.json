@@ -1,0 +1,69 @@
+{
+  "name": "@aossie/mcp-template",
+  "version": "0.1.0",
+  "description": "Template for shipping a zero-infrastructure MCP server for any AOSSIE project: stdio transport, npm distribution, static catalog on GitHub Pages.",
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "aossie",
+    "stdio",
+    "template"
+  ],
+  "license": "GPL-3.0-only",
+  "author": "AOSSIE",
+  "homepage": "https://github.com/AOSSIE-Org/MCP-Template#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AOSSIE-Org/MCP-Template.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AOSSIE-Org/MCP-Template/issues"
+  },
+  "type": "module",
+  "bin": {
+    "aossie-mcp-template": "dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "mcp.config.json",
+    "catalog/catalog.schema.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.10.0"
+  },
+  "scripts": {
+    "gen": "node scripts/generate-runtime.mjs",
+    "prebuild": "npm run gen && npm run check:stdout",
+    "build": "tsc -p tsconfig.json",
+    "prepare": "node scripts/generate-runtime.mjs",
+    "version": "node scripts/sync-version.mjs",
+    "prepublishOnly": "npm run build && npm run test",
+    "typecheck": "npm run gen && tsc -p tsconfig.json --noEmit",
+    "check:stdout": "node scripts/check-stdout.mjs",
+    "check:catalog": "node scripts/build-catalog.mjs --check",
+    "verify": "npm run check:stdout && npm run check:catalog && npm run typecheck && npm test",
+    "pretest": "npm run build",
+    "test": "node --test \"test/**/*.test.mjs\"",
+    "catalog": "node scripts/build-catalog.mjs",
+    "onboard": "node scripts/onboard.mjs",
+    "inspect": "npx -y @modelcontextprotocol/inspector node dist/index.js",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "typescript": "^5.7.3"
+  }
+}

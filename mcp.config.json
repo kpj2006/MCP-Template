@@ -1,0 +1,36 @@
+{
+  "$comment": "THE ONBOARDING SURFACE. Edit this file to point the template at your project. Run `npm run gen && npm run build` after changing it.",
+
+  "server": {
+    "name": "aossie-mcp-template",
+    "title": "AOSSIE MCP Template",
+    "version": "0.1.0",
+    "instructions": "Read-only access to the AOSSIE MCP Template demo catalog. Use search_items to discover items by keyword, then get_item to read one in full. Call list_categories to see how the catalog is organised."
+  },
+
+  "catalog": {
+    "url": "https://aossie-org.github.io/MCP-Template/catalog.json",
+    "localFallbackUrl": null,
+    "cacheTtlSeconds": 900,
+    "fetchTimeoutMs": 8000,
+    "fetchRetries": 2
+  },
+
+  "naming": {
+    "toolPrefix": "",
+    "itemNoun": "item",
+    "itemNounPlural": "items"
+  },
+
+  "limits": {
+    "searchDefaultLimit": 10,
+    "searchMaxLimit": 50,
+    "summaryMaxChars": 400,
+    "contentMaxChars": 20000
+  },
+
+  "resources": {
+    "enabled": true,
+    "uriScheme": "aossie"
+  }
+}
