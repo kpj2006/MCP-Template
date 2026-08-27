@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "generatedAt": "2026-08-24T03:16:53.000Z",
+  "project": {
+    "name": "AOSSIE MCP Template",
+    "description": "Reference catalog shipped with the template. Replace catalog/sources/** with your project's content.",
+    "homepage": "https://aossie.org",
+    "repository": "https://github.com/AOSSIE-Org/MCP-Template"
+  },
+  "categories": [
+    {
+      "id": "guides",
+      "name": "Guides",
+      "description": "How-to documents describing a task from start to finish."
+    },
+    {
+      "id": "reference",
+      "name": "Reference",
+      "description": "Contracts, schemas and configuration surfaces to look values up in."
+    }
+  ],
+  "items": [
+    {
+      "id": "keep-stdout-clean",
+      "title": "Never write to stdout",
+      "summary": "On stdio transport, stdout is the JSON-RPC framing — one stray console.log breaks the session.",
+      "category": "guides",
+      "tags": [
+        "stdio",
+        "debugging",
+        "logging"
+      ],
+      "content": "This is the single most common way a working MCP server appears broken.\n\nWith stdio transport the client reads JSON-RPC frames from your process's\nstdout. Anything else written there lands mid-frame, the client's parser fails,\nand what the user sees is an opaque \"server disconnected\" with no clue why.\n\nThe rules:\n\n- Never call `console.log`, `console.info`, `process.stdout.write`, or anything\n  that reaches stdout, anywhere in the server or its dependencies.\n- Route all diagnostics through `src/core/logger.ts`, which writes to stderr.\n  Clients surface stderr in their logs, so nothing is lost.\n- Keep the lint rule that bans `console` inside `src/`. It pays for itself the\n  first time a contributor adds a debug print.\n- Be suspicious of dependencies that log. A library that prints a deprecation\n  notice to stdout will break your server and the stack trace will point\n  somewhere unhelpful.\n\nSet `AOSSIE_MCP_LOG_LEVEL=debug` to see the full fetch and cache trace on\nstderr while developing."
+    },
+    {
+      "id": "onboard-a-project",
+      "title": "Onboard an AOSSIE project onto MCP",
+      "summary": "The four edits that turn this template into your project's MCP server.",
+      "category": "guides",
+      "tags": [
+        "onboarding",
+        "setup",
+        "npm"
+      ],
+      "url": "https://github.com/AOSSIE-Org/MCP-Template/blob/main/docs/ONBOARDING.md",
+      "content": "Onboarding is four edits and one release. No servers are involved at any point.\n\n## 1. Claim a name\n\nPick the npm package name (`@aossie/<project>-mcp`) and the MCP server name\n(`aossie-<project>`). Run `npm run onboard` to rewrite `package.json`,\n`mcp.config.json` and the README placeholders in one pass.\n\n## 2. Point at your catalog\n\nSet `catalog.url` in `mcp.config.json` to where GitHub Pages will serve the\ndocument — usually `https://<org>.github.io/<repo>/catalog.json`. The URL does\nnot have to exist yet; the bundled snapshot covers you until it does.\n\n## 3. Replace the content\n\nDelete `catalog/sources/**` and drop your own Markdown in. One file is one\ncatalog entry. Front matter supplies `title`, `summary`, `tags` and optionally\n`id`, `category` and `url`; everything after the front matter becomes the body.\nDirectory names under `sources/` become categories when front matter omits one.\n\nRun `npm run catalog` to build and validate. The builder fails loudly on\nduplicate ids, unknown categories and missing summaries, because every one of\nthose is a bug a caller would otherwise hit at runtime.\n\n## 4. Name your nouns\n\nSet `naming.itemNoun` and `naming.itemNounPlural` to what your entries actually\nare. A docs project gets `search_pages` and `get_page`; a skills project gets\n`search_skills` and `get_skill`. This matters more than it looks: a model picks\ncorrectly from a specific name far more reliably than it infers intent from a\ngeneric one.\n\n## Then release\n\nTag `v0.1.0` and push. `publish.yml` builds, tests and publishes to npm with\nprovenance. `catalog.yml` publishes the catalog to GitHub Pages on every push to\n`main`, so content updates never need an npm release."
+    },
+    {
+      "id": "catalog-contract",
+      "title": "Catalog document contract",
+      "summary": "The shape of the static JSON the server fetches, and the rules the builder enforces.",
+      "category": "reference",
+      "tags": [
+        "catalog",
+        "schema",
+        "reference",
+        "github-pages"
+      ],
+      "url": "https://github.com/AOSSIE-Org/MCP-Template/blob/main/catalog/catalog.schema.json",
+      "content": "Code and data ship on separate rails. The npm package holds logic and changes\nrarely; the catalog holds content and changes whenever someone merges a PR.\nAdding an entry is a Pages deploy, not an npm release — which is what makes this\nworkable across a large number of repositories.\n\n## Shape\n\n```json\n{\n  \"version\": 1,\n  \"generatedAt\": \"2026-01-01T00:00:00.000Z\",\n  \"project\": { \"name\": \"...\", \"description\": \"...\", \"homepage\": \"...\" },\n  \"categories\": [{ \"id\": \"guides\", \"name\": \"Guides\", \"description\": \"...\" }],\n  \"items\": [\n    {\n      \"id\": \"onboard-a-project\",\n      \"title\": \"Onboard an AOSSIE project onto MCP\",\n      \"summary\": \"One sentence.\",\n      \"category\": \"guides\",\n      \"tags\": [\"onboarding\"],\n      \"url\": \"https://...\",\n      \"content\": \"Full body text.\"\n    }\n  ]\n}\n```\n\n## Rules the builder enforces\n\n- `id` is unique, non-empty and URL-safe. Ids are the handle callers cache, so\n  renaming one is a breaking change.\n- `summary` is present and non-empty. Search returns summaries, so a blank one\n  makes an entry undiscoverable in practice even though it is indexed.\n- `category`, when set, matches a declared category id. A typo would otherwise\n  produce a filter that silently returns nothing.\n- `version` matches the contract version the package understands.\n\n## Field budget\n\nReturn the minimum that lets a caller decide. Search hands back five fields plus\nan id; the body waits for an explicit get. If your entries carry twenty\nproject-specific fields, put them in `metadata` and expose only the ones a model\nwould act on."
+    },
+    {
+      "id": "mcp-config",
+      "title": "mcp.config.json reference",
+      "summary": "Every field in the template's configuration file and what changing it does.",
+      "category": "reference",
+      "tags": [
+        "config",
+        "reference"
+      ],
+      "content": "`mcp.config.json` is compiled into the build by `scripts/generate-runtime.mjs`.\nRun `npm run gen` (or any `npm run build`) after editing it.\n\n## server\n\n- `name` — MCP server identity, lowercase and URL-safe. Clients show it.\n- `title` — human-readable display name.\n- `version` — reported in the handshake. Keep it in step with `package.json`.\n- `instructions` — sent to the model once at session start. Say what the catalog\n  holds and in what order to call the tools.\n\n## catalog\n\n- `url` — where the static catalog document lives.\n- `localFallbackUrl` — a filesystem path or `file:` URL tried *before* `url`.\n  Development convenience; leave `null` in a release.\n- `cacheTtlSeconds` — how long a fetched catalog is served without rechecking.\n- `fetchTimeoutMs`, `fetchRetries` — network budget per load.\n\n## naming\n\n- `toolPrefix` — prepended to every tool name. Useful when a user runs several\n  AOSSIE servers at once and names would otherwise collide.\n- `itemNoun`, `itemNounPlural` — drive both tool names and tool descriptions.\n\n## limits\n\n- `searchDefaultLimit`, `searchMaxLimit` — result count bounds.\n- `summaryMaxChars` — search result summaries are truncated to this.\n- `contentMaxChars` — the get tool truncates bodies here and says so in the\n  result, rather than silently flooding the caller's context.\n\n## resources\n\n- `enabled` — register MCP resources alongside tools.\n- `uriScheme` — scheme for resource URIs, e.g. `aossie://guide/my-id`.\n\n## Environment overrides\n\n`AOSSIE_MCP_CATALOG_URL`, `AOSSIE_MCP_CACHE_TTL`, `AOSSIE_MCP_FETCH_TIMEOUT_MS`\nand `AOSSIE_MCP_LOG_LEVEL` override the compiled values at runtime, so you can\npoint a built server at a local catalog without rebuilding."
+    }
+  ]
+}

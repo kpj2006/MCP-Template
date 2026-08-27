@@ -1,0 +1,21 @@
+{
+  "$comment": "Project identity and the category vocabulary. The builder merges this with catalog/sources/** to produce catalog.json.",
+  "project": {
+    "name": "AOSSIE MCP Template",
+    "description": "Reference catalog shipped with the template. Replace catalog/sources/** with your project's content.",
+    "homepage": "https://aossie.org",
+    "repository": "https://github.com/AOSSIE-Org/MCP-Template"
+  },
+  "categories": [
+    {
+      "id": "guides",
+      "name": "Guides",
+      "description": "How-to documents describing a task from start to finish."
+    },
+    {
+      "id": "reference",
+      "name": "Reference",
+      "description": "Contracts, schemas and configuration surfaces to look values up in."
+    }
+  ]
+}

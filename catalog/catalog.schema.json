@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aossie-org.github.io/MCP-Template/catalog.schema.json",
+  "title": "AOSSIE MCP catalog",
+  "description": "The static document an AOSSIE MCP server reads. Publish it to GitHub Pages; the npm package fetches it at runtime. Mirror of src/core/schemas.ts — keep the two in step.",
+  "type": "object",
+  "required": ["version", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Contract version. Bump only for breaking shape changes; the server refuses versions it cannot read."
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the builder produced this document. Lets callers judge staleness."
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "homepage": { "type": "string" },
+        "repository": { "type": "string" }
+      }
+    },
+    "categories": {
+      "type": "array",
+      "description": "The vocabulary the search tool filters on. Keep it small — a dozen categories a model can hold in mind beats a hundred it cannot.",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "name": { "type": "string", "minLength": 1 },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "summary"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+            "description": "Stable and URL-safe. Changing an id breaks anything that cached it."
+          },
+          "title": { "type": "string", "minLength": 1 },
+          "summary": {
+            "type": "string",
+            "description": "One sentence. Returned by search, so it is the field a model uses to choose — write it for that reader."
+          },
+          "category": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "url": { "type": "string", "format": "uri" },
+          "content": {
+            "type": "string",
+            "description": "Full body. Returned only by the get tool, never by search."
+          },
+          "metadata": { "type": "object", "description": "Project-specific fields, passed through untouched." }
+        }
+      }
+    }
+  }
+}
