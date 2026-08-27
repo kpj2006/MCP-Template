@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor from package.json engines, and current LTS. Users run this
+        # through npx on whatever Node they happen to have, so both must pass.
+        node: ['20.10', '22']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      # stdout guard, catalog validation, typecheck, and the end-to-end stdio
+      # test that spawns the built server and drives it with a real MCP client.
+      - run: npm run verify
+
+  # Proves the published artifact works the way a user installs it: pack the
+  # tarball, install it into an empty project, and speak MCP to the installed
+  # binary. Catches a missing entry in `files`, a broken shebang, or a dependency
+  # that only resolved because it was present in the dev tree.
+  install-from-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Pack, install into a clean project, and handshake
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          NAME="$(node -p "require('./package.json').name")"
+          BIN="$(node -p "Object.values(require('./package.json').bin)[0]")"
+          TARBALL="$PWD/$(npm pack --silent | tail -1)"
+
+          mkdir -p /tmp/consumer && cd /tmp/consumer
+          npm init -y > /dev/null
+          npm install "$TARBALL"
+
+          ENTRY="node_modules/$NAME/$BIN"
+          test -f "$ENTRY" || { echo "::error::$BIN is missing from the published tarball"; exit 1; }
+
+          # One initialize frame is enough to prove the package starts and speaks
+          # the protocol. `timeout` bounds it because a stdio server has no reason
+          # to exit on its own.
+          RESPONSE="$(printf '%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}' \
+            | timeout 30 node "$ENTRY" | head -1)"
+
+          echo "$RESPONSE"
+          grep -q '"serverInfo"' <<< "$RESPONSE" \
+            || { echo "::error::no serverInfo in the initialize response"; exit 1; }

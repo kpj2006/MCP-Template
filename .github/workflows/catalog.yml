@@ -1,0 +1,71 @@
+name: Publish catalog to Pages
+
+# The data rail. Content changes deploy here and reach every installed client on
+# their next cache expiry — no npm release, no version bump, nothing for users to
+# update. That separation is what makes this workable across many repositories.
+#
+# One-time setup: Settings > Pages > Build and deployment > Source: GitHub Actions.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'catalog/**'
+      - 'scripts/build-catalog.mjs'
+      - '.github/workflows/catalog.yml'
+  workflow_dispatch:
+  schedule:
+    # Weekly rebuild, so `generatedAt` stays recent even when content is quiet
+    # and a broken builder is noticed before someone needs it.
+    - cron: '17 4 * * 1'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; the newer content should win.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # The builder has no dependencies, so skip the install entirely.
+      - name: Build and validate the catalog
+        run: node scripts/build-catalog.mjs
+
+      - name: Summarise
+        run: |
+          {
+            echo '### Catalog'
+            echo
+            echo "- entries: $(node -p "require('./catalog/dist/catalog.json').items.length")"
+            echo "- categories: $(node -p "require('./catalog/dist/catalog.json').categories.length")"
+            echo "- built: $(node -p "require('./catalog/dist/catalog.json').generatedAt")"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: catalog/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

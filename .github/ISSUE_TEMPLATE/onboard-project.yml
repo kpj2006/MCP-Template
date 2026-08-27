@@ -1,0 +1,91 @@
+name: Onboard a project onto MCP
+description: Request an MCP server for an AOSSIE project, built from this template.
+title: 'Onboard: <project name>'
+labels: ['mcp', 'onboarding']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Everything below feeds `npm run onboard`. Filling it in accurately is most
+        of the work — the mechanical part takes minutes.
+
+        No infrastructure is involved: the server runs on each user's machine over
+        stdio and the data is static JSON on GitHub Pages.
+
+  - type: input
+    id: project
+    attributes:
+      label: Project slug
+      description: Lowercase and hyphenated. Becomes the package name and the MCP server name.
+      placeholder: solar-oracle
+    validations:
+      required: true
+
+  - type: input
+    id: repo
+    attributes:
+      label: Repository
+      description: Where the MCP server will live. A new repo from this template is fine.
+      placeholder: AOSSIE-Org/SolarOracle-MCP
+    validations:
+      required: true
+
+  - type: input
+    id: noun
+    attributes:
+      label: What is one catalog entry called?
+      description: >
+        Singular and plural. This drives the tool names — `forecast` gives
+        `get_forecast` and `search_forecasts`. Use the word your community
+        already uses; a model picks a specific name far more reliably than a
+        generic one.
+      placeholder: forecast / forecasts
+    validations:
+      required: true
+
+  - type: textarea
+    id: content
+    attributes:
+      label: What should the catalog contain?
+      description: >
+        What an agent should be able to look up. Docs pages, model descriptions,
+        API endpoints, contribution guides — whatever is useful to ask about.
+        Roughly how many entries, and where does the source text live today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: questions
+    attributes:
+      label: Three questions a user should be able to ask
+      description: >
+        The single most useful thing in this issue. Concrete questions are what
+        tell us whether four generic tools are enough or the project needs its
+        own, and they become the first things we test against.
+      placeholder: |
+        1. How does the rooftop yield model handle cloud cover?
+        2. Which forecasts need irradiance data as input?
+        3. What is the contribution process for adding a new model?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: needs-server
+    attributes:
+      label: Does anything here need shared state or a secret?
+      description: >
+        If everything is public, read-only reference data, the answer is no and
+        this stays free forever. Answer yes only for writes that must be
+        centrally serialised, or an API key that cannot be handed to users.
+      options:
+        - 'No — public, read-only data'
+        - 'Not sure'
+        - 'Yes (please explain below)'
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Existing docs sites, an owner for the repo, GSoC timing constraints.

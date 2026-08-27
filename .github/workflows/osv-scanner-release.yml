@@ -1,5 +1,9 @@
 # https://google.github.io/osv-scanner/github-action/#scan-on-release
-name: Release Process
+#
+# npm publishing itself lives in .github/workflows/publish.yml (tag/version
+# checks, snapshot refresh, pack verification, provenance). This workflow
+# only covers the security-scan side of a release.
+name: Release Security Scan
 
 on:
   push:
@@ -38,28 +42,3 @@ jobs:
         run: npm ci
       - name: Verify (typecheck, tests, catalog/stdout checks)
         run: npm run verify
-  release:
-    needs: # Needs both tests and osv-scan to pass
-      - tests
-      - osv-scan
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write # required for npm provenance
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: "20"
-          cache: "npm"
-          registry-url: "https://registry.npmjs.org"
-      - name: Install dependencies
-        run: npm ci
-      - name: Build
-        run: npm run build
-      - name: Publish to npm
-        run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
